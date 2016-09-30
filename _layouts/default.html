@@ -45,7 +45,7 @@
     function login() {
       FB.login(function(response) {
         console.log('login: ' + response);
-      }, {scope: 'publish_pages,publish_actions,manage_pages'});
+      }, {scope: 'publish_pages,manage_pages'});
     }
     
     function logout() {
