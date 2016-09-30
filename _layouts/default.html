@@ -24,7 +24,8 @@
         }
         else {
           console.log('Not logged in.');
-          if (window.location.pathname !== '/')
+          if (window.location.pathname === '/panel'
+              || window.location.pathname === '/done')
             window.location.replace('/');
         }
       };
@@ -145,9 +146,15 @@
 
   <!-- Primary Page Layout
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  {% if page.markdown %} <div class="container"> {% endif %}
   {{ content }}
-
-<!-- End Document
+  {% if page.markdown %} </div> {% endif %}
+  
+  <!-- Footer
   –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div class="container">
+    <small><a href="/pp">Privacy Policy</a></small>
+    <small><a href="/tos">Terms of Service</a></small>
+  </div>
 </body>
 </html>
