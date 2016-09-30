@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <!-- Facebook login
+  -->
+  <script>
+    window.fbAsyncInit = function() {
+      console.log('fbAsyncInit called.');
+      FB.init({
+        appId      : '179203992484397',
+        xfbml      : true,
+        version    : 'v2.7'
+      });
+      FB.AppEvents.logPageView();
+      
+      function checkLogin(response) {
+        if (response.status === 'connected') {
+          console.log('Logged in.');
+          if (window.location.pathname === '/')
+            window.location.replace('/panel');
+          else {
+            fillAccountOptions();
+          }
+        }
+        else {
+          console.log('Not logged in.');
+          if (window.location.pathname !== '/')
+            window.location.replace('/');
+        }
+      };
+    
+      FB.getLoginStatus(checkLogin);
+      FB.Event.subscribe('auth.authResponseChange', checkLogin);
+    };
+
+    (function(d, s, id){
+      var js, fjs = d.getElementsByTagName(s)[0];
+      if (d.getElementById(id)) {return;}
+      js = d.createElement(s); js.id = id;
+      js.src = "//connect.facebook.net/en_US/sdk.js";
+      fjs.parentNode.insertBefore(js, fjs);
+    }(document, 'script', 'facebook-jssdk'));
+    
+    function login() {
+      FB.login(function(response) {
+        console.log('login: ' + response);
+      }, {scope: 'publish_pages,publish_actions,manage_pages'});
+    }
+    
+    function logout() {
+      FB.logout(function(response) {
+        console.log('logout: ' + response);
+      })
+    }
+    
+    function fillAccountOptions() {
+      var ad = document.getElementById('acc');
+      if (ad) {
+        FB.api('me/accounts', function(res) {
+          console.log('grabbed accounts');
+          for (var i = 0; i < res.data.length; i++) {
+            var acc = res.data[i];
+            var opt = document.createElement('option');
+            opt.value = acc.id + '/' + acc.access_token;
+            opt.innerHTML = acc.name;
+            ad.appendChild(opt);
+          }
+        });
+      }
+    }
+    
+    function formSubmit(formData) {
+      var form = document.getElementsByTagName('form')[0]
+      if (form) {
+        var acc_token = form.acc.value.split('/');
+        var acc = acc_token[0];
+        var token = acc_token[1];
+        var delay = Number(form.delay.value);
+        var message = form.message.value;
+        
+        if (!acc || !delay || !message || delay < 0) {
+          alert('Fields were invalid');
+          return;
+        }
+        
+        FB.api(acc + '/feed', 'post', {
+          access_token: token,
+          message: message,
+          scheduled_publish_date: (Date.now() / 1000 + 3600)|0 + '',
+          published: false
+        }, function(response) {
+          if (!response.error) {
+            window.location.href = '/done';
+          }
+          else {
+            alert(response.error);
+          }
+        })
+      }
+    }
+  </script>
+  
+  <!-- Basic Page Needs
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta charset="utf-8">
+  <title>PostLater</title>
+  <meta name="description" content="">
+  <meta name="author" content="">
+
+  <!-- Mobile Specific Metas
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <!-- FONT
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link href="//fonts.googleapis.com/css?family=Raleway:400,300,600" rel="stylesheet" type="text/css">
+
+  <!-- CSS
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="stylesheet" href="/css/normalize.css">
+  <link rel="stylesheet" href="/css/skeleton.css">
+  <link rel="stylesheet" href="/css/styles.css">
+
+  <!-- Favicon
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <link rel="icon" type="image/png" href="images/favicon.png">
+
+  <!-- Firebase
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <!--<script src="https://www.gstatic.com/firebasejs/3.4.1/firebase.js"></script>-->
+  <!--<script src="/js/script.js"></script>-->
+</head>
+<body>
+  
+
+  <!-- Primary Page Layout
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+  <div class="container">
+  <div class="row">
+    <div class="one-half column" style="margin-top: 25%">
+      <h2>PostLater</h2>
+      <p>Schedule your social media posts / Engage your audience / Increase post reach / Sit back and relax</p>
+      <button onclick="login();">
+        Log in with facebook
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- End Document
+  –––––––––––––––––––––––––––––––––––––––––––––––––– -->
+</body>
+</html>
