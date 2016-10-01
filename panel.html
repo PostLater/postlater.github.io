@@ -125,6 +125,8 @@ function formSubmit() {
       message: message
     }).then(function() {
       //window.location.href = '/done';
+      form.delay.value = '';
+      form.message.value = '';
     }).catch(function(err) {
       alert(err);
     });
