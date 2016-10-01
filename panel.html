@@ -2,7 +2,162 @@
 layout: default
 navbar: true
 ---
+<script>
+window.onFbReady(function() {
+  var pl = document.getElementById('postList');
+  var ad = document.getElementById('acc');
+  firebase.auth().onAuthStateChanged(function(user) {
+    if (user) {
+      var userRef = firebase.database().ref('user/' + firebase.auth().currentUser.uid);
+      
+      
+      // populate past posts
+      userRef.child('queue').on('value', function(queueRef) {
+        pl.innerHTML = '';
+        
+        var queue = queueRef.val();
+        if (queue != null) {
+          var keys = Object.keys(queue);
+          for (var i = 0; i < keys.length; i++) {
+            var post = queue[keys[i]];
+
+            var date = new Date(Number(post.time));
+            var monthNames = [
+              "January", "February", "March",
+              "April", "May", "June", "July",
+              "August", "September", "October",
+              "November", "December"
+            ];
+
+            var minutes = ('0' + date.getMinutes()).substr(-2);
+            var hours = ('0' + date.getHours()).substr(-2);
+
+            var day = date.getDate();
+            var month = monthNames[date.getMonth()];
+            //var year = date.getFullYear();
+            var dateString = month + ' ' + day + ', ' + hours + ':' + minutes;
+
+            if (post.message.length > 240) {
+              var messageTruncated = post.message.substring(0, 240) + '...';
+            }
+            else {
+              var messageTruncated = post.message;
+            }
+
+            var tr = document.createElement('tr');
+            var tdTime = document.createElement('td');
+            tdTime.textContent = dateString;
+            tr.appendChild(tdTime);
+            var tdAcc = document.createElement('td');
+            tdAcc.textContent = post.accountName;
+            tr.appendChild(tdAcc);
+            var tdMsg = document.createElement('td');
+            tdMsg.textContent = messageTruncated;
+            tr.appendChild(tdMsg);
+            var tdDel = document.createElement('td');
+            var buttonDel = document.createElement('button')
+            buttonDel.textContent = 'Cancel';
+            buttonDel.onclick = function() {
+              deletePost(this);
+            }.bind(keys[i]);
+            tdDel.appendChild(buttonDel);
+            tr.appendChild(tdDel);
+            pl.appendChild(tr);
+          }
+        }
+        else {
+          var tr = document.createElement('tr');
+          var td = document.createElement('td');
+          td.textContent = 'No posts sceduled';
+          td.setAttribute('colspan', 4);
+          tr.appendChild(td);
+          pl.appendChild(tr);
+        }
+      });
+      
+      
+      // populate account dropdown
+      userRef.child('accessToken').once('value', function(tokenRef) {
+        FB.api('me/accounts', 'GET', {
+          access_token: tokenRef.val()
+        }, function(res) {
+          if (!res.error) {
+            console.log('grabbed accounts');
+            for (var i = 0; i < res.data.length; i++) {
+              var acc = res.data[i];
+              var opt = document.createElement('option');
+              opt.value = acc.id + '/' + acc.access_token;
+              opt.innerHTML = acc.name;
+              ad.appendChild(opt);
+            }
+          }
+          else
+            alert(JSON.stringify(res.error));
+        });
+      });
+    }
+  });
+});
+  
+function formSubmit() {
+  var form = document.getElementsByTagName('form')[0]
+  if (form) {
+    var select = form.querySelector('select');
+    var accName = select.options[select.selectedIndex].text;
+    
+    var acc_token = form.acc.value.split('/');
+    var acc = acc_token[0];
+    var token = acc_token[1];
+    var delay = Number(form.delay.value);
+    var message = form.message.value;
+
+    if (!acc || !delay || !message || delay < 0) {
+      alert('Fields were invalid');
+      return;
+    }
+    
+    var time = Date.now() + delay * 3600 * 1000;    
+    firebase.database().ref('user/' + firebase.auth().currentUser.uid + '/queue').push({
+      accountName: accName,
+      accountId: acc,
+      token: token,
+      time: time,
+      message: message
+    }).then(function() {
+      //window.location.href = '/done';
+    }).catch(function(err) {
+      alert(err);
+    });
+  }
+}
+
+function deletePost(pId) {
+  firebase.database().ref('user/' + firebase.auth().currentUser.uid + '/queue/' + pId)
+      .set(null).then(function() {
+    //window.location.href = '/done';
+  }).catch(function(err) {
+    alert(err);
+  });
+}
+</script>
 <div class="container">
+  <div class="row" style="margin-bottom: 40px;">
+    <div class="column">
+      <table class="u-full-width">
+        <thead>
+          <tr>
+            <th>Scheduled Time</th>
+            <th>Account</th>
+            <th>Message</th>
+            <th>Cancel Post</th>
+          </tr>
+        </thead>
+        <tbody id="postList">
+          
+        </tbody>
+      </table>
+    </div>
+  </div>
   <div class="row">
     <div class="column">
       <form>
